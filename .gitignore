@@ -40,3 +40,6 @@ src/utils/plotting.py
 conf/llm_models/mpra_gpt4o.yaml
 conf/llm_models/polymerase_gpt4o.yaml
 conf/llm_models/promoters_gpt4o.yaml
+
+# Other
+.dev/
