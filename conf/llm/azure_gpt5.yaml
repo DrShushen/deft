@@ -1,0 +1,13 @@
+_target_: src.llm.engines.api_engine_gpt5.APIEngine
+content: ${content}
+temperature: 1
+top_p: 0.95
+max_tokens: 4000
+max_attempts: 100
+rate_limiter: null
+request_timeout: 60
+config: ${llm_models}
+request_adapter:
+  _target_: src.llm.engines.unified_api_engine.GPT5RequestAdapter
+  n: 8  # NOTE: There is a kludgy max 8 set in GPT5RequestAdapter, we should get rid of that eventually.
+  reasoning_effort: minimal

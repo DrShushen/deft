@@ -1,0 +1,19 @@
+name: generic_csv
+csv_path: ???
+sequence_column: raw_sequence
+target_column: label
+test_size: 0.2
+sequence_length: ${oc.select:sequence_length,101}
+val_size: ${oc.select:val_size,0.1}
+n_nucleotides: 4
+random_state: ${oc.select:random_state,42}
+tree_filename: tree_generic.dill
+
+plugin:
+  _target_: src.data.generic_csv_plugin.GenericCsvDatasetPlugin
+  csv_path: ${..csv_path}
+  sequence_column: ${..sequence_column}
+  target_column: ${..target_column}
+  test_size: ${..test_size}
+  random_state: ${..random_state}
+  tree_filename: ${..tree_filename}

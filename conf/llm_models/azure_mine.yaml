@@ -1,0 +1,5 @@
+model: gpt-5.4-es
+api_type: azure
+api_base: https://vdslabazuremloai-eus2.openai.azure.com/
+api_version: 2025-04-01-preview
+api_key: ${oc.env:DEFT_API_KEY}

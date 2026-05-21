@@ -43,3 +43,9 @@ conf/llm_models/promoters_gpt4o.yaml
 
 # Other
 .dev/
+notebooks/.local/
+
+# Environment files (API keys, secrets)
+.env
+.env.*
+!.env.example
