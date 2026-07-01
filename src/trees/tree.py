@@ -1,7 +1,8 @@
 import logging
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import dill
 import numpy as np
@@ -17,6 +18,8 @@ from src.utils.tree import (
 )
 
 logger = logging.getLogger(__name__)
+
+ClassWeight = Mapping[Any, float] | str | None
 
 
 @dataclass
@@ -48,6 +51,7 @@ class AdaptiveDecisionTree:
         store_node_artifacts=False,
         save_locally=True,
         folder_path=None,
+        class_weight: ClassWeight = None,
     ):
         """Initialize the instance."""
         self.feature_finder = feature_finder
@@ -61,6 +65,8 @@ class AdaptiveDecisionTree:
         self.n_leaves = 0
         self.save_locally = save_locally
         self.folder_path = folder_path
+        self.class_weight = class_weight
+        self.class_weight_: dict[Any, float] | None = None
 
     def fit(self, X, y, **kwargs):
         """Fit values."""
@@ -73,7 +79,58 @@ class AdaptiveDecisionTree:
             logger.warning(
                 "save_locally=True but folder_path is not set; disabling local snapshots."
             )
+        self.class_weight_ = self._resolve_class_weight(y)
         self.root = self._grow_tree(X, y, depth=0, history=[], **kwargs)
+
+    def _resolve_class_weight(self, y) -> dict[Any, float] | None:
+        """Resolve class_weight into a concrete class-to-weight mapping."""
+        if self.class_weight is None:
+            return None
+
+        y_values = np.asarray(y)
+        classes, counts = np.unique(y_values, return_counts=True)
+
+        if isinstance(self.class_weight, str):
+            if self.class_weight != "balanced":
+                raise ValueError(
+                    "`class_weight` must be None, 'balanced', or a mapping from "
+                    "class labels to weights."
+                )
+            n_samples = len(y_values)
+            n_classes = len(classes)
+            return {
+                self._normalize_class_label(class_label): n_samples
+                / (n_classes * count)
+                for class_label, count in zip(classes, counts)
+            }
+
+        if not isinstance(self.class_weight, Mapping):
+            raise TypeError(
+                "`class_weight` must be None, 'balanced', or a mapping from "
+                "class labels to weights."
+            )
+
+        resolved_class_weight = {
+            self._normalize_class_label(class_label): float(weight)
+            for class_label, weight in self.class_weight.items()
+        }
+        if any(weight < 0 for weight in resolved_class_weight.values()):
+            raise ValueError("`class_weight` values must be non-negative.")
+
+        has_positive_weight = any(
+            resolved_class_weight.get(self._normalize_class_label(class_label), 1.0) > 0
+            for class_label in classes
+        )
+        if not has_positive_weight:
+            raise ValueError("At least one observed class must have positive weight.")
+
+        return resolved_class_weight
+
+    def _normalize_class_label(self, class_label: Any) -> Any:
+        """Convert NumPy scalar labels to their Python scalar equivalents."""
+        if isinstance(class_label, np.generic):
+            return class_label.item()
+        return class_label
 
     def _grow_tree(self, X, y, depth=0, history=None, **kwargs):
         """Handle grow tree."""
@@ -121,6 +178,7 @@ class AdaptiveDecisionTree:
                 history=node_history,
                 min_samples_leaf=self.min_samples_leaf,
                 splitting_criterion=self.splitting_criterion,
+                class_weight=self.class_weight_,
                 **kwargs,
             )
 
