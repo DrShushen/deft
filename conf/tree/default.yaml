@@ -6,3 +6,4 @@ max_leaf_nodes: 100
 store_node_artifacts: false
 save_locally: true
 folder_path: null
+class_weight: null

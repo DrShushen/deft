@@ -1,8 +1,10 @@
 import logging
 import signal
 import threading
+from collections.abc import Mapping
 from concurrent.futures import TimeoutError
 from copy import copy
+from typing import Any
 
 import numpy as np
 
@@ -114,7 +116,14 @@ def filter_features(list_features, X):
 
 
 @timeout(seconds=90, default=None)
-def optimize_threshold(splitting_criterion, feature, X, y, min_samples_leaf):
+def optimize_threshold(
+    splitting_criterion,
+    feature,
+    X,
+    y,
+    min_samples_leaf,
+    class_weight: Mapping[Any, float] | None = None,
+):
     """
     Given a single feature, find the optimal threshold to split the data for this feature,
     based on the splitting criterion, and update the fields of the feature accordingly.
@@ -159,7 +168,11 @@ def optimize_threshold(splitting_criterion, feature, X, y, min_samples_leaf):
             if n_left < min_samples_leaf or n_right < min_samples_leaf:
                 continue
 
-            score = splitting_criterion(y[left_mask], y[~left_mask])
+            score = splitting_criterion(
+                y[left_mask],
+                y[~left_mask],
+                class_weight=class_weight,
+            )
 
             if score > best_score:
                 best_score = score
@@ -173,7 +186,14 @@ def optimize_threshold(splitting_criterion, feature, X, y, min_samples_leaf):
     return feature
 
 
-def optimize_features(splitting_criterion, list_features, X, y, min_samples_leaf):
+def optimize_features(
+    splitting_criterion,
+    list_features,
+    X,
+    y,
+    min_samples_leaf,
+    class_weight: Mapping[Any, float] | None = None,
+):
 
     """Handle optimize features."""
     for i in range(len(list_features)):
@@ -181,7 +201,12 @@ def optimize_features(splitting_criterion, list_features, X, y, min_samples_leaf
         logging.info(f"Optimizing feature {feature.name}")
         try:
             result = optimize_threshold(
-                splitting_criterion, feature, X, y, min_samples_leaf
+                splitting_criterion,
+                feature,
+                X,
+                y,
+                min_samples_leaf,
+                class_weight=class_weight,
             )
             if result is None:
                 logger.info(f"Feature {feature.name} timed out after 90 seconds")
