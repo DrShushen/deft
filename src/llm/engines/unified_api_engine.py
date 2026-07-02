@@ -242,6 +242,17 @@ class UnifiedAPIEngine(GenericEngine):
                     )
                     resp = await openai.ChatCompletion.acreate(**request_kwargs)
                     break
+                except (
+                    openai.error.AuthenticationError,
+                    openai.error.PermissionError,
+                    openai.error.InvalidRequestError,
+                ) as e:
+                    # Non-retryable: bad key / no access / wrong deployment or model
+                    # (e.g. Azure DeploymentNotFound). Retrying cannot help, and
+                    # silently returning None here lets DEFT fall back to naive
+                    # features and "succeed" on a dead / misconfigured LLM. Fail loudly.
+                    logger.error("[LLM API] Non-retryable API error, aborting: %s", e)
+                    raise
                 except openai.error.RateLimitError as e:
                     if attempt < self.MAX_RETRIES - 1:
                         retry_time = self._extract_retry_time(str(e), attempt)
