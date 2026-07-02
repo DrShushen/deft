@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=62.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -38,7 +38,16 @@ dependencies = [
     "xgboost==3.0.2",
 ]
 
+[project.scripts]
+deft-tree = "src.cli.deft_tree:main"
+
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 include = ["src*"] # finds 'src' and 'src.*'
+
+[tool.setuptools.package-data]
+"src" = ["conf/*.yaml", "conf/*/*.yaml"]
 
 

@@ -22,7 +22,7 @@ def _resolve_output_filename(cfg) -> str:
     return f"tune_C_kmers_k_{k}_logistic.csv"
 
 
-@hydra.main(config_path="../conf", config_name="tune_kmers_logistic", version_base=None)
+@hydra.main(config_path="../src/conf", config_name="tune_kmers_logistic", version_base=None)
 def main(cfg) -> None:
     if str(cfg.featurizer.name) != "kmer_count":
         raise ValueError("This tuner expects featurizer=kmer_count.")
