@@ -2,9 +2,10 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from copy import copy
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -34,7 +35,15 @@ class FeatureFinder(ABC):
         pass
 
     @abstractmethod
-    def get_optimal_feature(self, X, y, min_samples_leaf, splitting_criterion, **kwargs):
+    def get_optimal_feature(
+        self,
+        X,
+        y,
+        min_samples_leaf,
+        splitting_criterion,
+        class_weight: Mapping[Any, float] | None = None,
+        **kwargs,
+    ):
         """Get optimal feature."""
         pass
 
@@ -58,7 +67,13 @@ class VanillaFeatureFinder(FeatureFinder):
         return list_features
 
     def get_optimal_feature(
-        self, X, y, min_samples_leaf, splitting_criterion=None, **kwargs
+        self,
+        X,
+        y,
+        min_samples_leaf,
+        splitting_criterion=None,
+        class_weight: Mapping[Any, float] | None = None,
+        **kwargs,
     ):
         """Get optimal feature."""
         list_features = self.generate_features(X, **kwargs)
@@ -71,6 +86,7 @@ class VanillaFeatureFinder(FeatureFinder):
             X=X,
             y=y,
             min_samples_leaf=min_samples_leaf,
+            class_weight=class_weight,
         )
         list_features = sorted(list_features, key=lambda x: x.score, reverse=True)
         return list_features[0] if list_features else None
@@ -131,6 +147,7 @@ class LLMFeatureFinder(FeatureFinder):
         sort_reflection_by_score=True,
         reflection_banner_length=42,
         output_rationale=True,
+        class_weight: Mapping[Any, float] | None = None,
         **kwargs,
     ):
         # Set the logging artifacts to none
@@ -175,6 +192,7 @@ class LLMFeatureFinder(FeatureFinder):
             X=X,
             y=y,
             min_samples_leaf=min_samples_leaf,
+            class_weight=class_weight,
         )
 
         list_original_features = copy(list_features)
@@ -256,6 +274,7 @@ class LLMFeatureFinder(FeatureFinder):
                     X=X,
                     y=y,
                     min_samples_leaf=min_samples_leaf,
+                    class_weight=class_weight,
                 )
 
               
