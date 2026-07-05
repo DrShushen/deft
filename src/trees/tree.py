@@ -261,8 +261,27 @@ class AdaptiveDecisionTree:
         return True
 
     def _get_prediction(self, y):
-        """Get prediction."""
-        return np.mean(y)
+        """Return a node's prediction score in ``[0, 1]`` (the positive proportion).
+
+        Without class weighting this is the raw positive rate ``mean(y)``. When a class
+        weighting is active (``self.class_weight_`` resolved in :meth:`fit`), it is instead the
+        class-weighted positive proportion ``sum_i w(y_i) * [y_i == 1] / sum_i w(y_i)`` -- so a
+        leaf predicts the positive class iff ``w_pos * n_pos > w_neg * n_neg``, matching sklearn's
+        weighted-vote rule under the 0.5 threshold in :meth:`predict`. This lets ``class_weight``
+        shift the actual predictions toward the minority class, not only the choice of splits.
+        """
+        if self.class_weight_ is None:
+            return np.mean(y)
+
+        y_arr = np.asarray(y)
+        weights = np.array(
+            [self.class_weight_.get(self._normalize_class_label(label), 1.0) for label in y_arr],
+            dtype=float,
+        )
+        total_weight = float(np.sum(weights))
+        if total_weight <= 0:
+            return np.mean(y)
+        return float(np.sum(weights * (y_arr == 1)) / total_weight)
 
     def _should_stop(self, y):
         """Check whether stop."""
