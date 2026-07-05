@@ -8,7 +8,6 @@ outputs/
 multirun/
 trainer_output/
 data/mpra/
-tests/
 # Ignore generated figure PDFs
 figures/*.pdf
 figures/**/*.pdf
